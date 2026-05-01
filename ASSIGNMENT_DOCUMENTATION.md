@@ -31,17 +31,17 @@
 
 Document your development process with **minimum 3 entries** showing progression:
 
-### Entry 1 - [Date, Time]
+### Entry 1 - [2026-4-30 , 9:01]
 **What I implemented**: 
-
+  my student ID
 **Challenges encountered**: 
-
+  no major challenges
 **How I solved it**: 
-
+  i replaced the random numbers to my actual ID
 **Testing approach**: 
 
 **Time spent**: 
-
+30 seconds
 ---
 
 ### Entry 2 - [Date, Time]
