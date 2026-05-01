@@ -39,9 +39,11 @@ class SharedResources {
     // TODO #1: Add a ReentrantLock(s) here to protect critical sections
     // Example: public static final ReentrantLock lock = new ReentrantLock();
     public static final ReentrantLock counterlock = new ReentrantLock();
+    public static final ReentrantLock lockLog = new ReentrantLock();
     
     // TODO #2: Add a Semaphore to limit concurrent process execution
     // Example: public static final Semaphore cpuSemaphore = new Semaphore(1);
+    
     
     // Method to increment context switch counter
     public static void incrementContextSwitch() {
@@ -81,7 +83,12 @@ class SharedResources {
     public static void logExecution(String message) {
         // TODO: Protect this critical section with a lock
         // RACE CONDITION: ArrayList is not thread-safe!
-        executionLog.add(message);
+        lockLog.lock();
+        try {
+            executionLog.add(message);
+        }finally{
+            lockLog.unlock();
+        }
     }
 }
 
