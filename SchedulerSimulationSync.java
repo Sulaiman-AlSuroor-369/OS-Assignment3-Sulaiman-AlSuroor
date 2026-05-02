@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Random;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.locks.ReentrantLock;
 // ANSI Color Codes for enhanced terminal output
 class Colors {
@@ -43,7 +44,7 @@ class SharedResources {
     
     // TODO #2: Add a Semaphore to limit concurrent process execution
     // Example: public static final Semaphore cpuSemaphore = new Semaphore(1);
-    
+    public static final Semaphore cpuSemaphore = new Semaphore(1);
     
     // Method to increment context switch counter
     public static void incrementContextSwitch() {
@@ -102,6 +103,7 @@ class Process implements Runnable {
     private long startTime;
     private long completionTime;
     private int priority;  // From Assignment 1
+    private static Semaphore cpuSemaphore;
     
     public Process(String name, int burstTime, int timeQuantum, int priority) {
         this.name = name;
@@ -111,11 +113,24 @@ class Process implements Runnable {
         this.priority = priority;
         this.creationTime = System.currentTimeMillis();
         this.startTime = -1;
+        cpuSemaphore = new Semaphore(1);
     }
     
     @Override
     public void run() {
         // TODO #3: Acquire CPU semaphore before executing
+        try {
+                cpuSemaphore.acquire();
+            try {
+                SharedResources.incrementContextSwitch();
+                SharedResources.incrementCompletedProcess();
+                SharedResources.addWaitingTime(startTime);  
+            } finally {
+                cpuSemaphore.release();  
+            }
+        }catch(InterruptedException e){ 
+            e.printStackTrace();  
+        }
         // This ensures only allowed number of processes run simultaneously
         
         try {
@@ -199,6 +214,7 @@ class Process implements Runnable {
     
     public void runToCompletion() {
         // TODO: Similar synchronization needed here
+        cpuSemaphore = new Semaphore(2);
         try {
             System.out.println(Colors.BRIGHT_CYAN + "  ⚡ " + Colors.BOLD + Colors.CYAN + name + 
                               Colors.RESET + Colors.BRIGHT_CYAN + " is the last process, running to completion" + 
