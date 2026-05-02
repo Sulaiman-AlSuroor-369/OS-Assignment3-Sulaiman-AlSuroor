@@ -14,7 +14,7 @@
 > Set sharing to "Anyone with the link can view".
 > Test the link in incognito/private mode before submitting.
 
-**Video Link**: [Paste your personal Gmail Google Drive link here]
+**Video Link**: [https://drive.google.com/file/d/1sFMwxCOrBNfE6WLzQmnzi413HXKP2_7k/view?usp=sharing]
 
 **Video filename**: `[445050158]_Assignment3_Synchronization.mp4`
 
@@ -347,7 +347,7 @@ fine-grained locking on independent counters  while coarse-grained approach stil
 ### What I learned about synchronization:
 
 [6-8 sentences about key concepts, challenges, insights]
-
+synchronization is essential when multiple threads access shared resources like quests, counters, etc. without locks, race conditions cause lost updates and data structures, leading to non-deterministic and incorrect results.
 ---
 
 ### Real-world applications:
