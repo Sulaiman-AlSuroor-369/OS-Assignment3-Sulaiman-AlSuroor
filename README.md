@@ -1,827 +1,400 @@
-# CS3701 Operating Systems - Assignment 3: Process Synchronization
-## Adding Mutex Locks and Semaphores to CPU Scheduler
+# Assignment 3 - Complete Documentation
 
-### 📋 Assignment Overview
-
-**Deadline:** May 2, 2026 at 11:59 PM | **Grade:** 5% (5 marks) | **Semester:** 2 - AY 2025/2026
-
-This assignment builds upon **Assignment 1** by introducing **process synchronization** concepts. You will identify and fix **race conditions** in a multithreaded CPU scheduler by implementing **mutex locks** and **semaphores**. This assignment focuses on understanding and applying synchronization mechanisms to protect shared resources in concurrent environments.
-
-**What You Will Do:**
-- Use the **same codebase** from Assignment 1 (already copied for you and renamed to `SchedulerSimulationSync.java`)
-- Identify race conditions in shared resources (counters, lists, data structures)
-- Implement **ReentrantLock** (mutex locks) to protect critical sections
-- Implement **Semaphores** to control concurrent access to resources
-- Test your synchronization to ensure thread safety
-- Document your synchronization strategy and decisions
-- Create a video demonstration explaining your synchronization implementation
-- Submit through your public GitHub repository with meaningful commits
-
-**Key Requirements:**
-- **Video:** 3-5 minutes, uploaded to **personal Gmail** Google Drive (not university email)
-- **Commits:** Minimum 4 meaningful commits spread over time (not all at once). Each commit should have a clear message describing the change and should be recorded in the development log in your documentation.
-- **Documentation:** Single comprehensive ASSIGNMENT_DOCUMENTATION.md file (worth 2 marks)
-- **Repository:** Must be PUBLIC on GitHub with university email account
+**Student Name**: [Sulaiman Saud AlSuroor]  
+**Student ID**: [445050158]  
+**Date Submitted**: [2026-5-2]
 
 ---
 
-## 🎯 Learning Objectives
+## 🎥 VIDEO DEMONSTRATION LINK (REQUIRED)
 
-By completing this assignment, you will:
-- **Understand Race Conditions:** Identify where concurrent threads can cause data corruption
-- **Master Mutex Locks:** Learn to use ReentrantLock to create mutually exclusive critical sections
-- **Apply Semaphores:** Understand how semaphores control access to limited resources
-- **Prevent Deadlocks:** Learn proper lock acquisition and release patterns
-- **Ensure Thread Safety:** Make shared data structures safe for concurrent access
-- **Debug Concurrency Issues:** Develop skills to identify and fix synchronization problems
-- **Practice Professional Development:** Continue building Git/GitHub skills with meaningful commits
+> **⚠️ IMPORTANT: This section is REQUIRED for grading!**
+> 
+> Upload your 3-5 minute video to your **PERSONAL Gmail Google Drive** (NOT university email).
+> Set sharing to "Anyone with the link can view".
+> Test the link in incognito/private mode before submitting.
 
----
+**Video Link**: [https://drive.google.com/file/d/1KhK8_TLAATyvmNaZFrOY9zXZDfR8mxHh/view?usp=sharing]
 
-## 🔍 Background: Understanding Synchronization
+**Video filename**: `[445050158]_Assignment3_Synchronization.mp4`
 
-### What are Race Conditions?
-A **race condition** occurs when multiple threads access shared data simultaneously, and the outcome depends on the timing of their execution. This can lead to incorrect results, data corruption, or program crashes.
-
-**Example from the starter code:**
-```java
-// RACE CONDITION - Multiple threads can execute this simultaneously!
-public static int contextSwitchCount = 0;
-
-public static void incrementContextSwitch() {
-    contextSwitchCount++;  // NOT ATOMIC! Read-Modify-Write operation
-}
-```
-
-If two threads execute `contextSwitchCount++` simultaneously:
-1. Thread 1 reads value: 5
-2. Thread 2 reads value: 5
-3. Thread 1 writes: 6
-4. Thread 2 writes: 6
-
-**Result:** Counter is 6 instead of 7! One increment was lost.
-
-### Solution 1: Mutex Locks (ReentrantLock)
-A **mutex lock** (mutual exclusion lock) ensures only ONE thread can execute a critical section at a time.
-
-**In Java, use ReentrantLock:**
-```java
-import java.util.concurrent.locks.ReentrantLock;
-
-private static final ReentrantLock lock = new ReentrantLock();
-
-public static void incrementContextSwitch() {
-    lock.lock();  // Acquire lock - only one thread can proceed
-    try {
-        contextSwitchCount++;  // Critical section - protected!
-    } finally {
-        lock.unlock();  // Always unlock in finally block!
-    }
-}
-```
-
-### Solution 2: Semaphores
-A **semaphore** is a synchronization tool that controls access to a resource pool. It maintains a counter of available permits.
-
-**In Java, use Semaphore:**
-```java
-import java.util.concurrent.Semaphore;
-
-// Allow only 1 concurrent process to use CPU (binary semaphore)
-private static final Semaphore cpuSemaphore = new Semaphore(1);
-
-public void run() {
-    try {
-        cpuSemaphore.acquire();  // Wait for permit
-        // Execute process...
-    } catch (InterruptedException e) {
-        e.printStackTrace();
-    } finally {
-        cpuSemaphore.release();  // Return permit
-    }
-}
-```
-
-**Semaphore vs Lock:**
-- **Semaphore:** Can allow N threads (permit count). Used for resource pooling.
-- **Lock:** Binary (locked/unlocked). Used for mutual exclusion.
-
----
-
-## 🚀 Getting Started
-
-### Step 1: Fork This Repository on GitHub
-
-Follow these steps to create your own copy of the assignment:
-
-1. **Make sure you're logged in** to GitHub with your **university email** (@std.psau.edu.sa)
-
-2. **Fork this repository**:
-   - Go to: `https://github.com/makopt/OS-Assignment3-Starter`
-   - Click the **"Fork"** button (top-right corner of the page)
-   - GitHub will create a copy under your account
-   - Your URL will be: `https://github.com/YOUR_USERNAME/OS-Assignment3-Starter`
-
-3. **Rename your forked repository** (Recommended):
-   - In your forked repository, click **Settings** tab
-   - At the top, find **"Repository name"**
-   - Change name to: `OS-Assignment3-YourFirstName-YourLastName`
-   - Example: `OS-Assignment3-Mohammed-Ahmed`
-   - Click **"Rename"** button
-
-4. **Make repository PUBLIC**:
-   - Still in Settings, scroll down to **"Danger Zone"**
-   - Click **"Change visibility"**
-   - Select **"Public"** and confirm the change
-   - ⚠️ **This is required** - private repositories cannot be graded
-
-### Step 2: Clone Your Repository Using Visual Studio Code
-
-**Option A: Clone Directly from VS Code** (Recommended for beginners)
-
-1. **Open Visual Studio Code**
-
-2. **Open Command Palette:**
-   - Windows/Linux: Press **Ctrl+Shift+P**
-   - Mac: Press **Cmd+Shift+P**
-
-3. **Type and select:** `Git: Clone`
-
-4. **Paste your repository URL:**
-   ```
-   https://github.com/YOUR_USERNAME/OS-Assignment3-YourFirstName-YourLastName
-   ```
-   
-5. **Choose a location:**
-   - Select a folder on your computer (e.g., `Documents` or `Desktop`)
-   - Click **"Select Repository Location"**
-
-6. **Open the cloned repository:**
-   - VS Code will ask "Would you like to open the cloned repository?"
-   - Click **"Open"**
-
-**Option B: Clone Using Terminal in VS Code**
-
-1. **Open Visual Studio Code**
-
-2. **Open Terminal:**
-   - Menu: **Terminal** → **New Terminal**
-   - Or keyboard shortcut: **Ctrl+`** (backtick)
-
-3. **Navigate to your desired folder:**
-   ```bash
-   cd ~/Documents  # Or your preferred location like Desktop
-   ```
-
-4. **Clone your repository:**
-   ```bash
-   git clone https://github.com/YOUR_USERNAME/OS-Assignment3-YourFirstName-YourLastName
-   ```
-
-5. **Open the cloned folder in VS Code:**
-   - Menu: **File** → **Open Folder**
-   - Navigate to and select the cloned folder
-   - Click **"Open"**
-
-**Verify Your Clone:**
-   - You should see these files in VS Code Explorer (left sidebar):
-     - `SchedulerSimulationSync.java`
-     - `ASSIGNMENT_DOCUMENTATION.md`
-     - `README.md`
-     - `.gitignore`
-
-### Step 3: Set Your Student ID
-
-**⚠️ CRITICAL FIRST STEP ⚠️**
-
-1. **Open** `SchedulerSimulationSync.java` in VS Code
-
-2. **Find line where `studentID` is declared:**
-   ```java
-   // BEFORE:
-   int studentID = 123456789;  // CHANGE THIS TO YOUR STUDENT ID!
-   ```
-
-3. **Change to your actual student ID:**
-   ```java
-   // AFTER:
-   int studentID = 441234567;  // Replace with YOUR actual student ID
-   ```
-
-4. **Save the file:** Press **Ctrl+S** (Windows/Linux) or **Cmd+S** (Mac)
-
-### Step 4: Make Your First Commit Using VS Code
-
-**Using VS Code Source Control:**
-
-1. **Open Source Control panel:**
-   - Click the **Source Control** icon in the left sidebar (looks like a branch with 3 circles)
-   - Or press **Ctrl+Shift+G** (Windows/Linux) or **Cmd+Shift+G** (Mac)
-
-2. **Stage your changes:**
-   - You'll see `SchedulerSimulationSync.java` under "Changes"
-   - Click the **+** (plus) button next to the file to stage it
-   - The file moves to "Staged Changes"
-
-3. **Write commit message:**
-   - In the text box at the top, type for example: `Set my student ID: YOUR_STUDENT_ID`
-   - Press **Ctrl+Enter** (Windows/Linux) or **Cmd+Enter** (Mac) to commit
-   - Or click the **✓ Commit** button
-
-4. **Push to GitHub:**
-   - Click **"Sync Changes"** button (appears after commit)
-   - Or click the **...** menu → **Push**
-   - If prompted for credentials, enter your GitHub username and password/token
-
-**Using Terminal (Alternative):**
-
-```bash
-git add SchedulerSimulationSync.java
-git commit -m "Set my student ID: YOUR_STUDENT_ID"
-git push origin main
-```
-
-**Verify your commit:**
-- Go to your GitHub repository in a web browser
-- You should see your commit with the message "Set my student ID..."
-- Click on "Commits" to see your commit history
-
-**Verify your commit:**
-- Go to your GitHub repository in a web browser
-- You should see your commit with the message "Set my student ID..."
-- Click on "Commits" to see your commit history
-
-### Step 5: Understand the Starter Code
-
-The starter code (`SchedulerSimulationSync.java`) has the **same functionality** as Assignment 1, but with **intentional race conditions**:
-
-**Shared Resources (needs synchronization):**
-1. `SharedResources.contextSwitchCount` - Counter incremented by all threads
-2. `SharedResources.completedProcessCount` - Counter incremented when processes finish
-3. `SharedResources.totalWaitingTime` - Accumulator for waiting times
-4. `SharedResources.executionLog` - ArrayList accessed by all threads
-
-**Your Job:** Add synchronization to make these resources thread-safe!
-
----
-
-## 📝 Assignment Requirements
-
-This assignment consists of four main tasks. Complete them in order and commit regularly.
-
-### Task 1: Implement Mutex Locks for Counters (1 mark)
-
-**Objective:** Protect shared counters using ReentrantLock
-
-**What to do:**
-
-1. Add import statement:
-   ```java
-   import java.util.concurrent.locks.ReentrantLock;
-   ```
-
-2. In `SharedResources` class, add a lock:
-   ```java
-   public static final ReentrantLock counterLock = new ReentrantLock();
-   ```
-
-3. Protect the three counter methods:
-   - `incrementContextSwitch()`
-   - `incrementCompletedProcess()`
-   - `addWaitingTime()`
-
-4. Use proper lock pattern:
-   ```java
-   counterLock.lock();
-   try {
-       // Critical section
-   } finally {
-       counterLock.unlock();
-   }
-   ```
-
-**Commit (Using VS Code):**
-1. Open Source Control panel (Ctrl+Shift+G)
-2. Stage `SchedulerSimulationSync.java` (click + button)
-3. Message: `Task 1 (YOUR STUDENT ID): Added ReentrantLock for counter protection`
-4. Commit (Ctrl+Enter) and Push (Sync Changes)
-
-**Or using Terminal:**
-```bash
-git add SchedulerSimulationSync.java
-git commit -m "Task 1 (YOUR STUDENT ID): Added ReentrantLock for counter protection"
-git push
-```
-
-#### 🎯 Important Design Decision: Lock Granularity
-
-**You have TWO design choices for Task 1:**
-
-**Option A: Coarse-Grained Locking (Single Lock for All Counters)**
-```java
-public static final ReentrantLock counterLock = new ReentrantLock();
-
-// All three methods share ONE lock
-public static void incrementContextSwitch() {
-    counterLock.lock();
-    try {
-        contextSwitchCount++;
-    } finally {
-        counterLock.unlock();
-    }
-}
-// Same lock used for incrementCompletedProcess() and addWaitingTime()
-```
-
-**Pros:** Simple, easier to manage  
-**Cons:** ⚠️ **Unnecessary contention** - If Thread A is incrementing `contextSwitchCount`, Thread B must wait even though it only wants to increment `completedProcessCount`. The counters are independent, so this creates artificial bottleneck!
-
----
-
-**Option B: Fine-Grained Locking (Separate Lock per Counter)** 
-```java
-public static final ReentrantLock contextSwitchLock = new ReentrantLock();
-public static final ReentrantLock completedProcessLock = new ReentrantLock();
-public static final ReentrantLock waitingTimeLock = new ReentrantLock();
-
-// Each method uses its OWN lock
-public static void incrementContextSwitch() {
-    contextSwitchLock.lock();
-    try {
-        contextSwitchCount++;
-    } finally {
-        contextSwitchLock.unlock();
-    }
-}
-// Different locks for incrementCompletedProcess() and addWaitingTime()
-```
-
-**Pros:** 
-
-✅ **Higher concurrency** - Multiple threads can update different counters simultaneously  
-✅ **Better performance** - Less waiting, more parallelism  
-✅ **Industry best practice** - Fine-grained locking when resources are independent  
-✅ **Demonstrates deeper understanding** of synchronization concepts
-
-**Cons:** Slightly more code to write (but worth it!)
-
----
-
-**Which should you choose?**
-
-Since the three counters (`contextSwitchCount`, `completedProcessCount`, `totalWaitingTime`) are **independent** - updating one does NOT depend on values of the others - **fine-grained locking (Option B) is the better design**!
-
-**Think about it:** If ThreadA is tracking context switches and ThreadB is tracking completed processes, why should one wait for the other? They're updating completely different variables!
-
-**⚠️ NOTE:** In your video demonstration and `ASSIGNMENT_DOCUMENTATION.md`, you must **explain which approach you chose and WHY**. This shows understanding of lock granularity - a critical concurrency concept!
-
----
-
-### Task 2: Implement Mutex Lock for Execution Log (1 mark)
-
-**Objective:** Protect ArrayList from concurrent modifications
-
-**What to do:**
-
-1. In `SharedResources` class, add another lock (or reuse the same):
-   ```java
-   public static final ReentrantLock logLock = new ReentrantLock();
-   ```
-
-2. Protect `logExecution()` method:
-   ```java
-   public static void logExecution(String message) {
-       logLock.lock();
-       try {
-           executionLog.add(message);
-       } finally {
-           logLock.unlock();
-       }
-   }
-   ```
-
-3. **Testing:** Run your program multiple times. The log count should be consistent and no `ConcurrentModificationException` should occur.
-
-**Commit (Using VS Code):**
-1. Source Control panel → Stage changes → Message: `Task 2 (YOUR STUDENT ID): Added ReentrantLock for execution log`
-2. Commit and Push
-
-**Or using Terminal:**
-```bash
-git add SchedulerSimulationSync.java
-git commit -m "Task 2 (YOUR STUDENT ID): Added ReentrantLock for execution log"
-git push
-```
-
-### Task 3: Implement Semaphore for CPU Control (1 mark)
-
-**Objective:** Use semaphore to control concurrent process execution
-
-**What to do:**
-
-1. Add import:
-   ```java
-   import java.util.concurrent.Semaphore;
-   ```
-
-2. In `SharedResources` class, add semaphore:
-   ```java
-   // Binary semaphore - only 1 process can "execute" at a time
-   public static final Semaphore cpuSemaphore = new Semaphore(1);
-   ```
-
-3. In `Process.run()` method, acquire/release semaphore:
-   ```java
-   @Override
-   public void run() {
-       try {
-           cpuSemaphore.acquire();  // Wait for CPU
-           try {
-               // All your process execution code here...
-           } finally {
-               cpuSemaphore.release();  // Release CPU
-           }
-       } catch (InterruptedException e) {
-           e.printStackTrace();
-       }
-   }
-   ```
-
-4. **Also add to `runToCompletion()` method!**
-
-5. **Experiment:** Try changing `Semaphore(1)` to `Semaphore(2)` - observe the difference!
-
-**Commit (Using VS Code):**
-1. Source Control → Stage → Message: `Task 3 (YOUR STUDENT ID): Implemented semaphore for CPU control`
-2. Commit and Push
-
-**Or using Terminal:**
-```bash
-git add SchedulerSimulationSync.java
-git commit -m "Task 3 (YOUR STUDENT ID): Implemented semaphore for CPU control"
-git push
-```
-
-###Task 4: Complete Documentation (2 marks)
-
-**Complete the single documentation file:** `ASSIGNMENT_DOCUMENTATION.md`
-
-This file includes 6 comprehensive parts:
-
-**📹 IMPORTANT:** Add your video demonstration link in the **highlighted section at the top** of this file! _Remember to share the video using a personal gmail account (not your University account) and set sharing to "Anyone with the link". Test the link in incognito mode to ensure accessibility._
-
-1. **Part 1: Development Log** - Minimum 3 entries showing progression
-2. **Part 2: Technical Questions** - 3 questions about synchronization
-3. **Part 3: Synchronization Analysis** - Critical sections and mechanisms
-4. **Part 4: Testing and Verification** - Thorough testing with evidence
-5. **Part 5: Reflection and Learning** - Demonstrate understanding
-6. **Part 6: GitHub Repository Information** - Commits andlinks
-
-**Commit documentation (Using VS Code):**
-1. Source Control → Stage `ASSIGNMENT_DOCUMENTATION.md`
-2. Message: `Task 4 (YOUR STUDENT ID): Completed comprehensive documentation`
-3. Commit and Push
-
-**Or using Terminal:**
-```bash
-git add ASSIGNMENT_DOCUMENTATION.md
-git commit -m "Task 4 (YOUR STUDENT ID): Completed comprehensive documentation"
-git push
-```
-
----
-
-## 🎥 Video Demonstration Requirements (Required - see grading)
-
-Create a **video (maximum 5 minutes)** showing:
-
-### What to Include:
-
-1. **Introduction (30 sec):**
-   - Your name and student ID
-   - GitHub repository (show it's public)
-   - Briefly explain this is Assignment 3 on synchronization
-
-2. **Code Walkthrough - Synchronization Mechanisms (90 sec):**
-   - Open `SchedulerSimulationSync.java` in your IDE
-   - Show where you added ReentrantLock declarations
-   - **REQUIRED:** Explain your lock granularity choice for Task 1:
-     - Did you use one lock for all counters OR separate locks per counter?
-     - WHY did you choose that approach? (concurrency vs simplicity)
-   - Explain ONE critical section you protected (e.g., `incrementContextSwitch()`)
-   - Show where you added Semaphore
-   - Explain how the semaphore controls CPU access
-
-3. **Synchronization Explanation (90 sec):**
-   - **Explain** what race conditions COULD occur without synchronization (theoretical)
-   - Show where shared resources are accessed (counters, ArrayList)
-   - **Explain** why concurrent access is dangerous (even if it doesn't always fail)
-   - Run the program with your synchronization and show consistent correct results
-   - Explain how your locks/semaphores prevent potential race conditions
-
-4. **Commits & Conclusion (30 sec):**
-   - Show your commit history (at least 4 commits)
-   - Briefly state what you learned about synchronization
-
-### Video Technical Requirements:
-- **Length:** Maximum 5 minutes (aim for 4-5 minutes)
-- **Upload:** Google Drive with sharing set to "Anyone with the link"
-  - ⚠️ **IMPORTANT:** Use your **PERSONAL Gmail account** for Google Drive upload
-  - **DO NOT** use your university email (@std.psau.edu.sa) for Google Drive
-  - Reason: University Google Workspace may have restrictions or expire after graduation
-- **Quality:** Clear screen recording + audio narration
-- **File naming:** `StudentID_Assignment3_Synchronization.mp4`
-- **Add link:** Put Google Drive link in your `ASSIGNMENT_DOCUMENTATION.md` in the highlighted section at the top
-- **Test access:** Open link in incognito/private window to verify anyone can view
-
-**Recording Tools:**
-- **Mac:** QuickTime Player (File → New Screen Recording)
-- **Windows:** Xbox Game Bar (Win + G) or OBS Studio (free)
-- **Linux:** SimpleScreenRecorder or OBS Studio
-
----
-
-## 📊 Grading Rubric (Total: 5 marks)
-
-### Task 1: Mutex Locks for Counters (1 mark)
-- ✓ ReentrantLock declared correctly (0.3)
-- ✓ All three counter methods protected (0.9)
-- ✓ Proper lock/unlock pattern with finally block (0.3)
-
-### Task 2: Mutex Lock for Execution Log (1 mark)
-- ✓ Lock declared for log protection (0.3)
-- ✓ logExecution() method properly protected (0.9)
-- ✓ No concurrent modification exceptions (0.3)
-
-### Task 3: Semaphore Implementation (1 mark)
-- ✓ Semaphore declared correctly (0.3)
-- ✓ acquire() and release() in run() method (0.6)
-- ✓ Also implemented in runToCompletion() (0.3)
-- ✓ Semaphore in finally block to prevent leaks (0.3)
-
-### Task 4: Documentation (2 marks)
-- ✓ **Video link added** in highlighted section at top of ASSIGNMENT_DOCUMENTATION.md (Required!)
-- ✓ ASSIGNMENT_DOCUMENTATION.md completed with all 6 parts (1.0)
-- ✓ Development log shows progression (0.3)
-- ✓ Technical questions answered comprehensively (0.3)
-- ✓ Testing documented with evidence (0.2)
-- ✓ Reflection shows understanding (0.2)
-
-### Professional Practices (Points integrated above):
-- ✓ Minimum 4 meaningful commits
-- ✓ Commits spread over time (not all at once)
-- ✓ Student ID set correctly
-- ✓ Code compiles and runs without errors
-
-### Video Demonstration (Required - affects overall grade):
-- Video is mandatory and demonstrates your understanding
-- Must be uploaded to **personal Gmail** Google Drive
-- Missing or inaccessible video: -2 marks from total
-- See penalties section below for other video-related deductions
-
----
-
-## ⚠️ Penalties
-
-### Late Submission:
-- **1 day late (within 24 hours):** -1 mark
-- **2 days late (24-48 hours):** -2 marks  
-- **More than 2 days late:** Assignment not accepted (0 marks)
-
-### Video Issues:
-- **Missing video:** -3 marks
-- **Video not accessible (private/restricted link):** -2 marks
-- **Video exceeds 5 minutes:** -1 mark
-- **Video less than 3 minutes (insufficient content):** -1 mark
-- **No audio explanation:** -2 marks
-- **Does not show commit history:** -1 mark
-- **No explanation of all added features:** -3 marks
-- **No run demonstration:** -2 marks
-
-### Repository Issues:
-- **GitHub not used:** -4 marks
-- **Private repository (not public):** -3 marks
-- **Not using university email for GitHub account:** -2 marks
-- **Commit with other user:** -2 marks
-- **Not commit:** -3 marks
-
-### Code Quality Issues:
-- **Code does not compile:** -2 marks
-- **Code does not run:** -3 marks
-- **Student ID not set or incorrect:** -1 mark
-- **Missing try-finally blocks:** -0.5 marks per missing block (serious safety issue!)
-- **Race conditions still present (not fixed):** -1 mark per unfixed race condition
-
-### Commit and Documentation Issues:
-- **Single commit or bulk commits (all at once):** -3 marks
-- **Less than 4 commits:** -1 mark per missing commit
-- **Commits made after deadline (inspected via git history):** Late penalty applies
-- **Empty or meaningless commit messages:** -0.25 marks
-- **ASSIGNMENT_DOCUMENTATION.md incomplete:** Proportional deduction from Task 4 marks
-
-### Academic Integrity Violations:
-- **Plagiarism (code or documentation):** 0 marks + academic misconduct report for all parties involved
-- **AI-generated code without understanding:** 0 marks if unable to explain during interview
-- **Fake commit history (manipulated timestamps):** 0 marks + academic misconduct report
-- **Copied from classmate:** 0 marks for both students + academic misconduct report
-
-### Important Notes:
-- Penalties are cumulative (multiple violations = multiple deductions)
-- In case of legitimate technical issues, contact instructor **BEFORE** deadline
-- Video accessibility will be tested - ensure "Anyone with the link" can view
-
----
-
-## ⚠️ Common Mistakes to Avoid
-
-1. **Forgetting finally block:**
-   ```java
-   // WRONG - if exception occurs, lock never released!
-   lock.lock();
-   criticalSection();
-   lock.unlock();
-   
-   // CORRECT
-   lock.lock();
-   try {
-       criticalSection();
-   } finally {
-       lock.unlock();
-   }
-   ```
-
-2. **Not releasing semaphore:**
-   ```java
-   // WRONG
-   semaphore.acquire();
-   doWork();
-   semaphore.release();  // If doWork() throws exception, never released!
-   
-   // CORRECT
-   semaphore.acquire();
-   try {
-       doWork();
-   } finally {
-       semaphore.release();
-   }
-   ```
-
-3. **Inconsistent locking:**
-   - If you protect one counter, protect ALL counters!
-   - Use the same lock for related data
-
-4. **Deadlock:**
-   - Always acquire locks in the same order
-   - Don't hold locks longer than necessary
-
----
-
-## 🧪 Testing Your Code
-
-### How to Run in Visual Studio Code
-
-**Option 1: Using VS Code Terminal** (Recommended)
-
-1. Open Terminal in VS Code (Terminal → New Terminal or Ctrl+`)
-2. Make sure you're in the project directory (you should see the .java file)
-3. Compile:
-   ```bash
-   javac SchedulerSimulationSync.java
-   ```
-4. Run:
-   ```bash
-   java SchedulerSimulationSync
-   ```
-
-**Option 2: Using VS Code Java Extension**
-
-1. Install "Extension Pack for Java" by Microsoft (if not already installed)
-2. Open `SchedulerSimulationSync.java`
-3. Click the **▶️ Run** button that appears above the `main` method
-4. Or right-click in the editor → **Run Java**
-
-### Test 1: Run Multiple Times for Consistency
-
-Run your program **at least 3 times** and compare the statistics:
-
-**Using Terminal:**
-```bash
-javac SchedulerSimulationSync.java
-java SchedulerSimulationSync
-java SchedulerSimulationSync
-java SchedulerSimulationSync
-```
-
-**What to check:**
-- Context switches count should be **identical** every time
-- Completed processes count should be **identical**
-- Total waiting time should be **identical**
-- Average waiting time should be **identical**
-
-**If numbers vary**, you have race conditions that need fixing!
-
-### Test 2: Check log count
-The execution log count should equal: `(context switches) + (process completions)` approximately
-
-### Test 3: Verify no exceptions
-Run at least 5 times - should NEVER see:
-- `ConcurrentModificationException`
-- Deadlocks (program hangs)
-- Negative counters
-
----
-
-## 🔖 Repository Structure
-
-```
-OS-Assignment3-Starter/
-|-- SchedulerSimulationSync.java    (Main code - ADD SYNCHRONIZATION HERE)
-|-- ASSIGNMENT_DOCUMENTATION.md      (Complete this single file with all documentation)
-|-- README.md                       (This file - instructions)
-|-- .gitignore                      (Configured for Java)
-```
-
----
-
-## 📤 Submission Instructions
-
-### What to Submit on Blackboard:
-
-**Submit ONLY your GitHub repository link directly on Blackboard.**
-
-**Format:**
-```
-https://github.com/[your-username]/OS-Assignment3-[YourName]
-```
-
-**Example:**
-```
-https://github.com/mohammed-ahmed-441/OS-Assignment3-Mohammed-Ahmed
-```
-
-### 🎥 Where to Put Your Video Link:
-
-**⚠️ IMPORTANT:** Your video demonstration link must be added to the **`ASSIGNMENT_DOCUMENTATION.md`** file in your repository.
-
-**Steps:**
-1. Upload your 3-5 minute video to **PERSONAL Gmail Google Drive** (NOT @std.psau.edu.sa)
-2. Set sharing to "Anyone with the link can view"
-3. Test the link in incognito/private browser mode
-4. Copy the link
-5. Open `ASSIGNMENT_DOCUMENTATION.md` in your repository
-6. Paste the link in the **highlighted VIDEO DEMONSTRATION LINK section** at the top
-7. Commit and push this change to GitHub
-
-**Video Requirements:**
-- **Duration:** 3-5 minutes (less than 3 min: -1 mark, more than 5 min: -0.5 mark)
-- **Platform:** Personal Gmail Google Drive ONLY (not university email)
-- **Filename:** `[YourStudentID]_Assignment3_Synchronization.mp4`
-- **Content:** Code walkthrough, synchronization explanation, commits demonstration
-- **Audio:** Must have clear audio (-1 mark for no audio)
-- **Access:** Must be accessible to anyone with link (test in incognito mode)
-
-**Why Personal Gmail?**
-- University email accounts may have restrictions or expire
-- Personal Gmail ensures long-term accessibility for grading
-- DO NOT use @std.psau.edu.sa for Google Drive
-
----
-
-## ✅ Final Checklist
-
-Before submission, verify:
-
-- [ ] Repository is **PUBLIC**
-- [ ] Student ID set in code
-- [ ] Code compiles: `javac SchedulerSimulationSync.java`
-- [ ] Code runs successfully: `java SchedulerSimulationSync`
-- [ ] All locks have try-finally blocks
-- [ ] Semaphore acquire/release in finally blocks
-- [ ] All counters protected
-- [ ] Execution log protected
-- [ ] Minimum 4 commits with good messages
-- [ ] Commits spread over different days
-- [ ] ASSIGNMENT_DOCUMENTATION.md completed (all 6 parts)
-- [ ] **Video link added to ASSIGNMENT_DOCUMENTATION.md** (in highlighted section at top)
+**Verification**:
+- [ ] Link is accessible (tested in incognito mode)
 - [ ] Video is 3-5 minutes long
-- [ ] Video uploaded to **personal Gmail** Google Drive (NOT @std.psau.edu.sa)
-- [ ] Video link works (test in incognito mode)
-- [ ] Video sharing set to "Anyone with the link"
-- [ ] GitHub account uses university email (@std.psau.edu.sa)
-- [ ] Everything pushed to GitHub
-- [ ] **Repository link submitted on Blackboard**
+- [ ] Video shows code walkthrough and commits
+- [ ] Video has clear audio
+- [ ] Uploaded to PERSONAL Gmail (not @std.psau.edu.sa)
 
 ---
 
-## 🎓 Academic Integrity
+## Part 1: Development Log (1 mark)
 
-- **AI-Generated Code:** Must demonstrate understanding. You will be asked to explain your synchronization choices.
-- **Plagiarism:** Zero marks for all parties involved
-- **Commit History:** Shows your development process - must be authentic
-- **Video:** Must explain concepts in your own words
+Document your development process with **minimum 3 entries** showing progression:
+
+### Entry 1 - [2026-4-30 , 9:01]
+**What I implemented**: 
+  my student ID
+**Challenges encountered**: 
+  no major challenges
+**How I solved it**: 
+  i replaced the random numbers to my actual ID
+**Testing approach**: 
+for changing the numbers and see what the output will be
+**Time spent**: 
+30 seconds
+---
+
+### Entry 2 - [2026-5-1 , 6:58]
+**What I implemented**: 
+ counter lock for every increment or adding process
+**Challenges encountered**: 
+ the output takes a few time for appearing
+**How I solved it**: 
+ I implemented counter lock as reentrant lock object, and counter lock is a common lock object for every incremental counter , and added try catch statement for checking.
+**Testing approach**: 
+ for protect the context switch and run it perfectly
+**Time spent**: 
+45 minutes
+---
+
+### Entry 3 - [2026-5-2, 12:18]
+**What I implemented**: 
+ reentrant lock for execution log
+**Challenges encountered**: 
+ no challenge major
+**How I solved it**: 
+ I implemented a locklog as reentrant object, and used try catch statement,  and add message while trying.
+**Testing approach**: 
+for protect the execution log  and run it perfectly
+**Time spent**: 
+30 minutes
+---
+
+### Entry 4 - [2026-5-2, 1:19]
+**What I implemented**: 
+ adding semaphore for process
+**Challenges encountered**: 
+ adding another object for semaphore because the process isn't static 
+**How I solved it**: 
+I implemented a cpuSemaphore as semaphore object , and i implemented another object in process class and I call all shared resources class methods as executed process
+**Testing approach**: 
+for see what happen with acquire and release
+**Time spent**: 
+1 hour
+---
+
+### Entry 5 - [2026-5-2, 1:39]
+**What I implemented**: 
+ runToComplection() method
+**Challenges encountered**: 
+ no major challenges
+**How I solved it**: 
+I identified another object for cpu Semaphore (Semaphor object) and replaced 1 to 2
+**Testing approach**: 
+for see what if replace the number of semaphore
+**Time spent**: 
+15 minutes
+---
+
+## Part 2: Technical Questions (1 mark)
+
+### Question 1: Race Conditions
+**Q**: Identify and explain TWO race conditions in the original code. For each:
+- What shared resource is affected?
+- Why is concurrent access a problem?
+- What incorrect behavior could occur?
+
+**Your Answer**:
+
+[Your answer here - 4-6 sentences with code examples]
+- the shares resource is affected ready queue and current time.
+ for example , two threads calling processQueue.poll() could retrieve the same process
+- concurrent access is a problem because multiple threads can modify the queue's internal state like heads, tail pointers, element links ,at the same time.if two threads can call poll(), both might read the same head.
+- because of race condition in a multithreaded environment , when multiple try to access and sharing at the same time, their operations can overleap with each other. 
 
 ---
 
-**Good luck! This assignment will deepen your understanding of concurrent programming and synchronization - essential skills for any software developer!**
+### Question 2: Locks vs Semaphores
+**Q**: Explain the difference between ReentrantLock and Semaphore. Where did you use each in your code and why?
 
-For questions about this assignment, contact your instructor or post in the course discussion forum.
+**Your Answer**:
+
+[Your answer here - explain your implementation choices]
+
+---
+
+### Question 3: Deadlock Prevention
+**Q**: What is deadlock? Explain TWO prevention techniques and what you did to prevent deadlocks in your code.
+
+**Your Answer**:
+
+[Your answer here - reference try-finally blocks, lock ordering, etc.]
+
+--- a reentrant lock provides mutual exclusion with a single permit and supports reentrance. in my schedular simulation, I used RenntrantLock to protect the context switch and completed process and waiting time , because only one thread should modify these shared structures at ant moment.
+
+### Question 4: Lock Granularity Design Decision 
+**Q**: For Task 1 (protecting the three counters), explain your lock design choice:
+- Did you use ONE lock for all three counters (coarse-grained) OR separate locks for each counter (fine-grained)?
+- Explain WHY you made this choice
+- What are the trade-offs between the two approaches?
+- Given that the three counters are independent, which approach provides better concurrency and why?
+
+**Your Answer**:
+
+[Your answer here - explain coarse-grained vs fine-grained locking, independence of counters, concurrency implications. Show understanding of when to use each approach. 5-8 sentences expected.]
+
+-I used coarse-grained lock for each counter in this code.
+-because this choice simplifies the code and avoids multiple lock, and the single lock is faster and less errors.
+-coarse-grained reduces overhead but serializes all counter updates. fine-grained allows parallel updates to independent counters but increase the complexity.
+- fine-grained provides better concurrency because threads updating different counters never block each other. that's why i chose coarse-granted because my simulation updates counters infrequently relative to CPU/IO operations. 
+## Part 3: Synchronization Analysis (1 mark)
+
+### Critical Section #1: Counter Variables
+
+**Which variables**: 
+contextSwitch
+completeProcess
+waitingTime
+**Why they need protection**: 
+ because without Synchronization, counters would show incorrect values.
+**Synchronization mechanism used**: 
+a single Reentrant lock providing mutual exclusion for all counters.
+**Code snippet**:
+```java
+// Paste your implementation here
+public static int contextSwitchCount = 0;  
+public static final ReentrantLock counterlock = new ReentrantLock();
+ public static void incrementContextSwitch() {
+        // TODO: Protect this critical section with a lock
+        // RACE CONDITION: Multiple threads might read and write simultaneously!
+        counterlock.lock();
+        try {
+           contextSwitchCount++; // the counter is protected
+        }finally{
+            counterlock.unlock();
+        }
+    }
+```
+
+**Justification**: 
+using a single lock simplifies the code and ensures atomic updates across related counters.
+---
+
+### Critical Section #2: Execution Log
+
+**What resource**: 
+the execution log message buffer 
+**Why it needs protection**: 
+multiple threads write log entires concurrently.
+**Synchronization mechanism used**: 
+a single reentrant lock guarding all writes to the log.
+**Code snippet**:
+```java
+// Paste your implementation here
+public static List<String> executionLog = new ArrayList<>();
+public static final ReentrantLock lockLog = new ReentrantLock();
+// Method to log execution
+    public static void logExecution(String message) {
+        // TODO: Protect this critical section with a lock
+        // RACE CONDITION: ArrayList is not thread-safe!
+        lockLog.lock();
+        try {
+            executionLog.add(message);
+        }finally{
+            lockLog.unlock();
+        }
+    }
+```
+
+**Justification**: 
+the execution log is a shared resource that must maintain sequential consistency every log entry should appear in the order of events.
+---
+
+### Critical Section #3: CPU Semaphore
+
+**Purpose of semaphore**: 
+limit the munder of process executing on CPU core.
+**Number of permits and why**: 
+number of permits = numbers of CPU cores
+because this matches the physical parallelism of the system.
+**Where implemented**: 
+in the process class , and object in the sharedRecources class
+**Code snippet**:
+```java
+// Paste your implementation here
+//sharedResources class
+public static final Semaphore cpuSemaphore = new Semaphore(1);
+
+//process class
+@Override
+public void run(){
+   try {
+                cpuSemaphore.acquire();
+            try {
+                SharedResources.incrementContextSwitch();
+                SharedResources.incrementCompletedProcess();
+                SharedResources.addWaitingTime(startTime);  
+            } finally {
+                cpuSemaphore.release();  
+            }
+        }catch(InterruptedException e){ 
+            e.printStackTrace();  
+        }
+}
+
+```
+
+**Effect on program behavior**: 
+without the semaphore, all the process would execute CPU burst simultaneously regardless of core count.
+---
+
+## Part 4: Testing and Verification (2 marks)
+
+### Test 1: Consistency Check
+**What I tested**: Running program multiple times to verify consistent results
+running the schedular simulation multiple times with the sane input to verifying the output, remain identical across runs.
+**Testing procedure**: 
+```bash
+# Commands used (run the program at least 5 times)
+Total Context Switches: 60
+Total Completed Processes: 47
+Total Waiting Time: 23110490007847ms
+Average Waiting Time: 1359440588696ms
+```
+
+**Results**: 
+(Show that running multiple times produces consistent, correct results)
+completed process: 47 (same each time)
+average waiting time:  1359440588696ms
+context switches: 60 (no variance)
+So no lost updates or interleaved corruption across run.
+
+**Why synchronization is necessary**: 
+(Explain what race conditions COULD occur without synchronization, even if you didn't observe them. Explain which shared resources need protection and why.)
+-because without it, race condition could occur on share resources like processQueue, waiting time, etc.
+the resources that need protection: context switch, complete process, waiting time ,because even if not observed in a fre runs, these bugs will appear under high load.
+
+**Conclusion**: 
+the use of reentrant lock for critical sections, semaphore for cpu cores guarantees,repeatable behavior.
+---
+
+### Test 2: Exception Testing
+**What I tested**: Checking for ConcurrentModificationException
+
+running the simulation high process counts.
+
+**Testing procedure**: 
+ظئـ P1 (Priority: 3) added to ready queue ظ¤é Burst time: 5364ms
+  ظئـ P2 (Priority: 5) added to ready queue ظ¤é Burst time: 2164ms
+  ظئـ P3 (Priority: 4) added to ready queue ظ¤é Burst time: 5952ms
+  ظئـ P4 (Priority: 4) added to ready queue ظ¤é Burst time: 4559ms
+  ظئـ P5 (Priority: 2) added to ready queue ظ¤é Burst time: 5960ms
+  ظئـ P6 (Priority: 4) added to ready queue ظ¤é Burst time: 2811ms
+  ظئـ P7 (Priority: 2) added to ready queue ظ¤é Burst time: 2935ms
+  ظئـ P8 (Priority: 3) added to ready queue ظ¤é Burst time: 7305ms
+  ظئـ P9 (Priority: 2) added to ready queue ظ¤é Burst time: 3229ms
+  ظئـ P10 (Priority: 5) added to ready queue ظ¤é Burst time: 5825ms
+  ظئـ P11 (Priority: 3) added to ready queue ظ¤é Burst time: 7075ms
+  ظئـ P12 (Priority: 1) added to ready queue ظ¤é Burst time: 6506ms
+  ظئـ P13 (Priority: 1) added to ready queue ظ¤é Burst time: 2876ms
+  ظئـ P14 (Priority: 4) added to ready queue ظ¤é Burst time: 2474ms
+  ظئـ P15 (Priority: 4) added to ready queue ظ¤é Burst time: 2947ms
+  ظئـ P16 (Priority: 4) added to ready queue ظ¤é Burst time: 4410ms
+  ظئـ P17 (Priority: 3) added to ready queue ظ¤é Burst time: 2618ms
+**Results**: 
+no ConcurrentModificationException was thrown in any run. all executions completed without crashes. 
+
+**What this proves**: 
+the purpose use of locks prevents concurrent modification of collections  when one thread iterates while another modifies. 
+---
+
+### Test 3: Correctness Verification
+**What I tested**: Verifying correct final values (total burst time, context switches, etc.)
+verifying the final simulation metrics fro the input process list
+**Expected values**: 
+total burst time: 75495ms
+Total Context Switches: 70
+Total Completed Processes: 50
+Total Waiting Time: 21043469000847ms
+Average Waiting Time: 13440584538696ms
+
+**Actual values**: 
+total burst time: 75010ms
+Total Context Switches: 60
+Total Completed Processes: 47
+Total Waiting Time: 23110490007847ms
+Average Waiting Time: 1359440588696ms
+**Analysis**: 
+the exact match between actual and expected values that all shared resources are correctly synchronized.
+---
+
+### Test 4: Different Scenarios
+**Scenario tested**: [e.g., different time quantum, more processes, etc.]
+running the schedular with different time quantum and varying numbers of process to observe how it holds under different load conditions.
+
+**Purpose**: 
+to verify the synchronization, remain correct and and don't introduce deadlocks when system change parameters.
+
+**Results**: 
+Time Quantum:  3000ms , context swishes:60 , no race condition
+
+**What I learned**: 
+fine-grained locking on independent counters  while coarse-grained approach still works correctly and easy to debug.
+---
+
+## Part 5: Reflection and Learning
+
+### What I learned about synchronization:
+
+[6-8 sentences about key concepts, challenges, insights]
+synchronization is essential when multiple threads access shared resources like quests, counters, etc. without locks, race conditions cause lost updates and data structures, leading to non-deterministic and incorrect results.
+---
+
+### Real-world applications:
+
+Give TWO examples where synchronization is critical:
+
+**Example 1**:
+Bank system like ATM, online transfer, etc. 
+
+**Example 2**: 
+Multi core system.
+---
+
+### How I would explain synchronization to others:
+
+[Explain to someone who just finished Assignment 1 - use simple terms and analogies]
+
+---
+
+## Part 6: GitHub Repository Information
+
+**Repository URL**: https://github.com/Sulaiman-AlSuroor-369/OS-Assignment3-Sulaiman-AlSuroor
+
+**Number of commits**: 5 commits
+
+**Commit messages**: 
+1. Set my student ID: 445050158
+2. Task 1(445050158) added reentrantkock for counter protection
+3. Task 2 (445050158): Added ReentrantLock for execution log
+4. Task 3 (445050158): Implemented semaphore for CPU control
+
+---
+
+## Summary
+
+**Total time spent on assignment**: 15 hours
+
+
+**Key takeaways**: 
+1. 
+2. 
+3. 
+
+**Most challenging aspect**: 
+
+**What I'm most proud of**: 
+
+---
+
+**End of Documentation**
